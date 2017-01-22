@@ -254,6 +254,7 @@ var SimpleGame = (function () {
         this.game.load.image('doodad06', 'assets/background-doodad-06.png');
         this.game.load.image('doodad07', 'assets/background-doodad-07.png');
         this.game.load.image('doodad08', 'assets/background-doodad-08.png');
+        this.game.load.spritesheet('mouth', 'assets/mouth-spritesheet.png', 87, 91);
         this.game.load.image('title', 'assets/title.png');
     };
     SimpleGame.prototype.create = function () {
@@ -262,8 +263,9 @@ var SimpleGame = (function () {
         this.game.world.setBounds(0, 0, 1920, 1920);
         console.log(this.game.world.centerX, this.game.world.centerY);
         var spawnOffset = 200;
-        this.mouthGod = this.game.add.sprite(spawnOffset, spawnOffset, "mouth-bite1");
+        this.mouthGod = this.game.add.sprite(spawnOffset, spawnOffset, 'mouth', 1);
         this.mouthGod.scale.set(2);
+        this.mouthGodEatAnimation = this.mouthGod.animations.add('eat');
         var playerBodyScale = 0.65;
         this.playerBody = this.game.add.sprite(this.mouthGod.x + spawnOffset, this.mouthGod.y + spawnOffset, "segment");
         this.playerBody.scale.set(playerBodyScale);
@@ -349,6 +351,8 @@ var SimpleGame = (function () {
         this.crab.base.body.collides(this.armsCollisionGroups.concat([foodCollisionGroup, shellCollisionGroup, urchinCollisionGroup]));
         var foodHitMouth = function (playerBody, foodBody) {
             var sprite = foodBody.sprite;
+            _this.mouthGodEatAnimation.stop();
+            _this.mouthGodEatAnimation.play(18);
             sprite.kill();
             if (sprite.group) {
                 sprite.group.remove(sprite);
@@ -502,6 +506,9 @@ var SimpleGame = (function () {
         // this.eyes.forEach(e => e.update());
         this.armList.forEach(function (arm) { return arm.update(); });
         this.crab.update();
+        if (this.mouthGodEatAnimation.isFinished) {
+            this.mouthGodEatAnimation.play(1);
+        }
     };
     return SimpleGame;
 }());
@@ -530,7 +537,7 @@ var MyGame;
     var BootState = (function (_super) {
         __extends(BootState, _super);
         function BootState() {
-            return _super.apply(this, arguments) || this;
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         BootState.prototype.preload = function () { };
         BootState.prototype.create = function () {
@@ -549,7 +556,7 @@ var MyGame;
     var GameState = (function (_super) {
         __extends(GameState, _super);
         function GameState() {
-            return _super.apply(this, arguments) || this;
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         GameState.prototype.preload = function () { };
         GameState.prototype.create = function () {
@@ -565,7 +572,7 @@ var MyGame;
     var PreloaderState = (function (_super) {
         __extends(PreloaderState, _super);
         function PreloaderState() {
-            return _super.apply(this, arguments) || this;
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         PreloaderState.prototype.preload = function () {
             this.game.load.image('logo', 'assets/logo.png');
