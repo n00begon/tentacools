@@ -48,26 +48,26 @@ var Arm = (function () {
             }
             lastBall = b;
         });
-        stiffness.addListener(function (value) {
-            _this.springs.forEach(function (s) {
-                s.data.stiffness = value;
-            });
-        });
-        damping.addListener(function (value) {
-            _this.springs.forEach(function (s) {
-                s.data.damping = value;
-            });
-        });
-        armLengthStiffness.addListener(function (value) {
-            _this.hinges.forEach(function (h) {
-                h.setStiffness(value);
-            });
-        });
-        armLengthRelaxation.addListener(function (value) {
-            _this.hinges.forEach(function (h) {
-                h.setRelaxation(value);
-            });
-        });
+        // stiffness.addListener((value) => {
+        // 	this.springs.forEach(s => {
+        // 		s.data.stiffness = value;
+        // 	});
+        // });
+        // damping.addListener((value) => {
+        // 	this.springs.forEach(s => {
+        // 		s.data.damping = value;
+        // 	});
+        // });
+        // armLengthStiffness.addListener(value => {
+        // 	this.hinges.forEach(h => {
+        // 		h.setStiffness(value);
+        // 	});
+        // });
+        // armLengthRelaxation.addListener(value => {
+        // 	this.hinges.forEach(h => {
+        // 		h.setRelaxation(value);
+        // 	});
+        // });
         this.tip.body.force.x = Math.random() - 0.5 * 2000;
         this.tip.body.force.y = Math.random() - 0.5 * 2000;
     }
@@ -186,11 +186,11 @@ var SHOW_PHYSICS_DEBUG = false;
 var MOTION_FORCE = 2;
 var RECOIL_FORCE = 20;
 var RECOIL_DURATION_MS = 150;
-var gui = new dat.GUI();
+// const gui = new dat.GUI();
 var armsTotal = 3;
-var foodCount = 100;
-var urchinCount = 5;
-var shellCount = 7;
+var foodCount = 24;
+var urchinCount = 7;
+var shellCount = 10;
 var maxFoodToWin = 3;
 var tweaks = {
     stiffness: 30,
@@ -202,26 +202,26 @@ var tweaks = {
     armLengthRelaxation: 30,
     cameraScale: 1
 };
-function extendGuiParameterToSupportMultipleListeners(guiParam) {
-    guiParam.___changeCallbacks___ = [];
-    guiParam.addListener = (function (callback) {
-        this.___changeCallbacks___.push(callback);
-    }).bind(guiParam);
-    guiParam.onChange((function (val) {
-        this.___changeCallbacks___.forEach(function (cb) { return cb(val); });
-    }).bind(guiParam));
-}
-var stiffness = gui.add(tweaks, 'stiffness', 1, 50);
-extendGuiParameterToSupportMultipleListeners(stiffness);
-var damping = gui.add(tweaks, 'damping', 1, 500);
-extendGuiParameterToSupportMultipleListeners(damping);
-var mouthMass = gui.add(tweaks, 'mouthMass', 1, 100);
-var tentacleForce = gui.add(tweaks, 'tentacleForce', 10, 500);
-var armLengthStiffness = gui.add(tweaks, 'armLengthStiffness', 1, 50);
-extendGuiParameterToSupportMultipleListeners(armLengthStiffness);
-var armLengthRelaxation = gui.add(tweaks, 'armLengthRelaxation', 1, 50);
-extendGuiParameterToSupportMultipleListeners(armLengthRelaxation);
-var cameraScale = gui.add(tweaks, 'cameraScale', 0.5, 3);
+// function extendGuiParameterToSupportMultipleListeners(guiParam) {
+// 	guiParam.___changeCallbacks___ = [];
+// 	guiParam.addListener = (function (callback) {
+// 		this.___changeCallbacks___.push(callback);
+// 	}).bind(guiParam);
+// 	guiParam.onChange((function (val) {
+// 		this.___changeCallbacks___.forEach(cb => cb(val));
+// 	}).bind(guiParam));
+// }
+// var stiffness = gui.add(tweaks, 'stiffness', 1, 50);
+// extendGuiParameterToSupportMultipleListeners(stiffness);
+// var damping = gui.add(tweaks, 'damping', 1, 500);
+// extendGuiParameterToSupportMultipleListeners(damping);
+// var mouthMass = gui.add(tweaks, 'mouthMass', 1, 100);
+// var tentacleForce = gui.add(tweaks, 'tentacleForce', 10, 500);
+// var armLengthStiffness = gui.add(tweaks, 'armLengthStiffness', 1, 50);
+// extendGuiParameterToSupportMultipleListeners(armLengthStiffness);
+// var armLengthRelaxation = gui.add(tweaks, 'armLengthRelaxation', 1, 50);
+// extendGuiParameterToSupportMultipleListeners(armLengthRelaxation);
+// var cameraScale = gui.add(tweaks, 'cameraScale', 0.5, 3);
 function setPivotCenter(image) {
     image.pivot.set(image.width / 2, image.height / 2);
 }
@@ -238,14 +238,30 @@ var SimpleGame = (function () {
         this.game.load.image('eyeball-base', 'assets/eyeball-base.png');
         this.game.load.image('eyeball-iris', 'assets/eyeball-iris.png');
         this.game.load.image('eyeball-highlight', 'assets/eyeball-highlight.png');
-        this.game.load.image('mouth-closed', 'assets/mouth-closed.png');
-        this.game.load.image('mouth-bite0', 'assets/mouth-bite0.png');
-        this.game.load.image('mouth-bite1', 'assets/mouth-bite1.png');
-        this.game.load.image('mouth-bite2', 'assets/mouth-bite2.png');
+        this.game.load.image('mouth-closed', 'assets/mouth_closed.png');
+        this.game.load.image('mouth-closed2', 'assets/mouth_closed2.png');
+        this.game.load.image('mouth-bite0.0', 'assets/mouth_bite0.0.png');
+        this.game.load.image('mouth-bite0.5', 'assets/mouth_bite0.5.png');
+        this.game.load.image('mouth-bite1.0', 'assets/mouth_bite1.0.png');
+        this.game.load.image('mouth-bite1.5', 'assets/mouth_bite1.5.png');
+        this.game.load.image('mouth-bite2', 'assets/mouth_bite2.0.png');
         this.game.load.image('food', 'assets/boigah.png');
         this.game.load.image('shell', 'assets/shell.png');
         this.game.load.image('energy', 'assets/energy.gif');
         this.game.load.image('urchin', 'assets/urchin.png');
+        this.game.load.image('food-gib1', 'assets/boigah-gib-29.png');
+        this.game.load.image('food-gib2', 'assets/boigah-gib-30.png');
+        this.game.load.image('food-gib3', 'assets/boigah-gib-31.png');
+        this.game.load.image('food-gib4', 'assets/boigah-gib-32.png');
+        this.game.load.image('food-gib5', 'assets/boigah-gib-33.png');
+        this.game.load.image('food-gib6', 'assets/boigah-gib-34.png');
+        this.game.load.image('food-gib7', 'assets/boigah-gib-35.png');
+        this.game.load.image('food-gib8', 'assets/boigah-gib-36.png');
+        this.game.load.image('food-gib9', 'assets/boigah-gib-37.png');
+        this.game.load.image('screen-feedme1', 'assets/screen-feedme_1.png');
+        this.game.load.image('screen-feedme2', 'assets/screen-feedme_2.png');
+        this.game.load.image('screen-feedme3', 'assets/screen-feedme_3.png');
+        this.game.load.image('screen-feedme4', 'assets/screen-feedme_4.png');
         this.game.load.image('doodad01', 'assets/background-doodad-01.png');
         this.game.load.image('doodad02', 'assets/background-doodad-02.png');
         this.game.load.image('doodad03', 'assets/background-doodad-03.png');
@@ -254,20 +270,26 @@ var SimpleGame = (function () {
         this.game.load.image('doodad06', 'assets/background-doodad-06.png');
         this.game.load.image('doodad07', 'assets/background-doodad-07.png');
         this.game.load.image('doodad08', 'assets/background-doodad-08.png');
-        this.game.load.spritesheet('mouth', 'assets/mouth-spritesheet.png', 87, 91);
+        this.game.load.spritesheet('mouth', 'assets/mouth-spritesheet.png', 173, 178);
         this.game.load.image('title', 'assets/title.png');
+        this.game.load.image('success', 'assets/screen_success-alt.png');
+        this.game.load.image('controls', 'assets/screen_controls.png');
+        this.game.load.image('instructions', 'assets/screen_instructions.png');
     };
     SimpleGame.prototype.create = function () {
         var _this = this;
+        this.feedScreen1 = new GameScreen(this.game, "screen-feedme1", 2000);
+        this.feedScreen2 = new GameScreen(this.game, "screen-feedme2", 2000);
+        this.feedScreen3 = new GameScreen(this.game, "screen-feedme3", 2000);
         this.game.add.tileSprite(0, 0, 1920, 1920, 'background');
         this.game.world.setBounds(0, 0, 1920, 1920);
         console.log(this.game.world.centerX, this.game.world.centerY);
-        var spawnOffset = 200;
+        var spawnOffset = 300;
         this.mouthGod = this.game.add.sprite(spawnOffset, spawnOffset, 'mouth', 1);
-        this.mouthGod.scale.set(2);
         this.mouthGodEatAnimation = this.mouthGod.animations.add('eat');
         var playerBodyScale = 0.65;
-        this.playerBody = this.game.add.sprite(this.mouthGod.x + spawnOffset, this.mouthGod.y + spawnOffset, "segment");
+        var playerSpawnOffset = 150;
+        this.playerBody = this.game.add.sprite(this.mouthGod.x + playerSpawnOffset, this.mouthGod.y + playerSpawnOffset, "segment");
         this.playerBody.scale.set(playerBodyScale);
         this.foodEatenCount = 0;
         //add eyes
@@ -290,15 +312,15 @@ var SimpleGame = (function () {
         // window["eyes"] = this.eyes;  // for in-browser debug
         this.game.physics.startSystem(Phaser.Physics.P2JS);
         this.game.camera.follow(this.playerBody);
-        cameraScale.onChange(function (scale) {
-            _this.game.camera.scale.setTo(scale);
-        });
+        // cameraScale.onChange(scale => {
+        // 	this.game.camera.scale.setTo(scale);
+        // });
         // Enabled physics on mouth
         this.game.physics.p2.enable([this.playerBody, this.mouthGod], SHOW_PHYSICS_DEBUG);
         this.game.physics.p2.setImpactEvents(true);
         // setup behaviour of individual bits
         this.playerBody.body.mass = tweaks.playerBodyMass;
-        this.playerBody.body.setCircle(this.playerBody.width * playerBodyScale);
+        this.playerBody.body.setCircle((this.playerBody.width / 2) * playerBodyScale);
         this.mouthGod.body.mass = 1000;
         ;
         // this.mouthGod.body.setRectangle(this.mouthGod.width * 2, 90 * 2);
@@ -346,7 +368,7 @@ var SimpleGame = (function () {
             this.armsCollisionGroups.push(this.game.physics.p2.createCollisionGroup());
         }
         //Enemy
-        this.crab = new Crab(this.game, this.game.world.centerX - 200, this.game.world.centerY - 200, this.playerBody);
+        this.crab = new Crab(this.game, this.game.world.centerX + 400, this.game.world.centerY + 400, this.playerBody);
         this.crab.base.body.setCollisionGroup(urchinCollisionGroup);
         this.crab.base.body.collides(this.armsCollisionGroups.concat([foodCollisionGroup, shellCollisionGroup, urchinCollisionGroup]));
         var foodHitMouth = function (playerBody, foodBody) {
@@ -362,6 +384,16 @@ var SimpleGame = (function () {
             }
             foodBody.destroy();
             _this.foodEatenCount++;
+            switch (_this.foodEatenCount) {
+                case 1:
+                    _this.feedScreen2.show();
+                    break;
+                case 2:
+                    _this.feedScreen3.show();
+                    break;
+                default:
+                    console.log("food eaten: " + _this.foodEatenCount);
+            }
         };
         this.urchinReaction = false;
         var urchinHitPlayer = function (playerBody, urchinBody) {
@@ -411,11 +443,17 @@ var SimpleGame = (function () {
         this.allFood.enableBody = true;
         this.allFood.physicsBodyType = Phaser.Physics.P2JS;
         for (var i = 0; i < foodCount; i++) {
-            var food = this.allFood.create(this.game.world.randomX, this.game.world.randomY, 'food');
+            var x = this.game.world.randomX;
+            var y = this.game.world.randomY;
+            while (x < 350 || y < 350) {
+                x = this.game.world.randomX;
+                y = this.game.world.randomY;
+            }
+            var food = this.allFood.create(x, y, 'food');
             food.scale.setTo(0.2, 0.2);
             food.body.setCircle(food.width / 2 * 0.8, 0, 0, 0);
             food.body.setCollisionGroup(foodCollisionGroup);
-            food.body.collides(this.armsCollisionGroups.concat([foodCollisionGroup, shellCollisionGroup, urchinCollisionGroup, this.mouthCoillisionGroup]));
+            food.body.collides(this.armsCollisionGroups.concat([playerBodyCollisionGroup, foodCollisionGroup, shellCollisionGroup, urchinCollisionGroup, this.mouthCoillisionGroup]));
         }
         this.urchinGroup = this.game.add.group();
         this.urchinGroup.enableBody = true;
@@ -425,7 +463,7 @@ var SimpleGame = (function () {
             urchin.scale.setTo(0.2);
             urchin.body.setCircle(urchin.width / 2 * 0.8, 0, 0, 0);
             urchin.body.setCollisionGroup(urchinCollisionGroup);
-            urchin.body.collides(this.armsCollisionGroups.concat([foodCollisionGroup, shellCollisionGroup, urchinCollisionGroup, this.mouthCoillisionGroup]));
+            urchin.body.collides(this.armsCollisionGroups.concat([playerBodyCollisionGroup, foodCollisionGroup, shellCollisionGroup, urchinCollisionGroup, this.mouthCoillisionGroup]));
         }
         // Don't really need to worry about shells after creation
         var shellGroup = this.game.add.group();
@@ -443,6 +481,21 @@ var SimpleGame = (function () {
         this.title.pivot.set(this.title.width / 2, this.title.height / 2);
         this.title.scale.set(0.8);
         this.title.fixedToCamera = true;
+        // instructions
+        this.instructions = this.game.add.sprite(this.game.width / 2, this.game.height / 2, "instructions");
+        this.instructions.pivot.set(this.instructions.width / 2, this.instructions.height / 2);
+        // this.instructions.scale.set(0.8);
+        this.instructions.alpha = 0;
+        // controls
+        this.controls = this.game.add.sprite(this.game.width / 2, this.game.height / 2, "controls");
+        this.controls.pivot.set(this.controls.width / 2, this.controls.height / 2);
+        // this.controls.scale.set(0.8);
+        this.controls.alpha = 0;
+        // success
+        this.success = this.game.add.sprite(this.game.width / 2, this.game.height / 2, "success");
+        this.success.pivot.set(this.success.width / 2, this.success.height / 2);
+        // this.success.scale.set(0.8);
+        this.success.alpha = 0;
         // Sort out z-index of important items
         this.playerBody.bringToTop();
         this.title.bringToTop();
@@ -452,14 +505,39 @@ var SimpleGame = (function () {
         var _this = this;
         // Hide title screen after a while
         // Feel free to delete this or move it somewhere else somehow
-        if (this.title && this.game.time.now > 1000) {
+        if (this.title && this.game.time.now > 3000) {
             this.title.alpha -= 0.05;
             if (this.title.alpha < 0) {
                 this.game.world.removeChild(this.title);
+                this.title = null;
+                this.instructions.alpha = 1;
+                this.instructions.fixedToCamera = true;
+                this.instructions.bringToTop();
             }
         }
-        if (this.foodEatenCount >= maxFoodToWin) {
-            console.log("You have won");
+        if (!this.title && this.instructions && this.game.time.now > 7000) {
+            this.instructions.alpha -= 0.05;
+            if (this.instructions.alpha < 0) {
+                this.game.world.removeChild(this.instructions);
+                this.instructions = null;
+                this.controls.alpha = 1;
+                this.controls.fixedToCamera = true;
+                this.controls.bringToTop();
+            }
+        }
+        if (!this.instructions && this.controls && this.game.time.now > 12000) {
+            this.controls.alpha -= 0.05;
+            if (this.controls.alpha < 0) {
+                this.game.world.removeChild(this.controls);
+                this.controls = null;
+                this.feedScreen1.show();
+            }
+        }
+        if (this.foodEatenCount >= maxFoodToWin && !this.won) {
+            this.won = true;
+            this.success.alpha = 1;
+            this.success.fixedToCamera = true;
+            this.success.bringToTop();
         }
         function anglise(tip, direction, force) {
             var rotation = tip.rotation + direction;
@@ -491,7 +569,6 @@ var SimpleGame = (function () {
                 yForce += result.y;
             }
             if (_this.urchinReaction) {
-                console.log("recoilin");
                 var result = anglise(tip, Math.PI * 3 / 2, forceAmt * RECOIL_FORCE);
                 xForce += result.x;
                 yForce += result.y;
@@ -505,7 +582,9 @@ var SimpleGame = (function () {
         // this.mouthLips.rotation = -this.mouthLips.parent.rotation; // always up
         // this.eyes.forEach(e => e.update());
         this.armList.forEach(function (arm) { return arm.update(); });
-        this.crab.update();
+        if (this.game.time.now > 12000) {
+            this.crab.update();
+        }
         if (this.mouthGodEatAnimation.isFinished) {
             this.mouthGodEatAnimation.play(1);
         }
@@ -532,6 +611,37 @@ function armDraw() {
         }
     }
 }
+var GameScreen = (function () {
+    function GameScreen(game, screenName, timeout) {
+        this.screen = game.add.image(0, 0, screenName);
+        this.timeout = timeout;
+        this.screen.fixedToCamera = true;
+        this.screen.visible = false;
+        this.show = this.show.bind(this);
+        this.hide = this.hide.bind(this);
+    }
+    GameScreen.prototype.show = function () {
+        var _this = this;
+        this.screen.visible = true;
+        this.screen.bringToTop();
+        return new Promise(function (res, rej) {
+            if (typeof _this.timeout != "undefined") {
+                setTimeout(function () {
+                    _this.hide();
+                    res();
+                }, _this.timeout);
+            }
+            else {
+                res();
+            }
+        });
+    };
+    GameScreen.prototype.hide = function () {
+        this.screen.visible = false;
+        return new Promise(function (res) { res(); });
+    };
+    return GameScreen;
+}());
 var MyGame;
 (function (MyGame) {
     var BootState = (function (_super) {
