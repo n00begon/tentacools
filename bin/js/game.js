@@ -9,7 +9,7 @@ var armColors = [
     0x9329FF
 ];
 var Arm = (function () {
-    function Arm(game, armIndex) {
+    function Arm(game, armIndex, startX, startY) {
         var _this = this;
         this.armIndex = armIndex;
         this.game = game;
@@ -23,8 +23,8 @@ var Arm = (function () {
         var segmentCount = 15;
         var tintColor = armColors[armIndex % armColors.length];
         for (var i = 0; i < segmentCount; i++) {
-            var x = Math.cos(angle) * i * segmentLength + game.world.centerX;
-            var y = Math.sin(angle) * i * segmentLength + game.world.centerY;
+            var x = Math.cos(angle) * i * segmentLength + startX;
+            var y = Math.sin(angle) * i * segmentLength + startY;
             var ball = this.game.add.sprite(x, y, "segment");
             ball.tint = Phaser.Color.interpolateColor(0xffffff, tintColor, segmentCount, i);
             ball.scale.set(0.4 / (1 + (i / (segmentCount - 1)) * 1.5));
@@ -95,18 +95,18 @@ Arm.armIdCounter = 0;
 var Crab = (function () {
     function Crab(game, x, y, player) {
         this.game = game;
-        this.speed = 10;
+        this.player = player;
+        this.speed = 8;
         this.base = this.game.add.sprite(x, y, "urchin");
         this.base.scale.set(1.0);
         this.game.physics.p2.enable([this.base], SHOW_PHYSICS_DEBUG);
-        this.player = player;
+        this.base.body.setCircle(this.base.width / 2 * 0.8, 0, 0, 0);
     }
     Crab.prototype.attach = function (parent) {
         console.log("wow made an eyeball, attached " + this.base.position.toString());
         parent.addChild(this.base);
     };
     Crab.prototype.update = function () {
-        console.log(this.player, this.base);
         var angle = Math.atan2(this.player.y - this.base.y, this.player.x - this.base.x);
         this.base.body.rotation = angle; // correct angle of angry bullets (depends on the sprite used)
         this.base.body.force.x = Math.cos(angle) * this.speed; // accelerateToObject 
@@ -188,16 +188,19 @@ var RECOIL_FORCE = 20;
 var RECOIL_DURATION_MS = 150;
 var gui = new dat.GUI();
 var armsTotal = 3;
-var foodCount = 10;
-var urchinCount = 10;
-var shellCount = 75;
+var foodCount = 100;
+var urchinCount = 5;
+var shellCount = 7;
+var maxFoodToWin = 3;
 var tweaks = {
     stiffness: 30,
     damping: 500,
+    playerBodyMass: 10,
     mouthMass: 5,
     tentacleForce: 140,
     armLengthStiffness: 40,
-    armLengthRelaxation: 30
+    armLengthRelaxation: 30,
+    cameraScale: 1
 };
 function extendGuiParameterToSupportMultipleListeners(guiParam) {
     guiParam.___changeCallbacks___ = [];
@@ -218,6 +221,7 @@ var armLengthStiffness = gui.add(tweaks, 'armLengthStiffness', 1, 50);
 extendGuiParameterToSupportMultipleListeners(armLengthStiffness);
 var armLengthRelaxation = gui.add(tweaks, 'armLengthRelaxation', 1, 50);
 extendGuiParameterToSupportMultipleListeners(armLengthRelaxation);
+var cameraScale = gui.add(tweaks, 'cameraScale', 0.5, 3);
 function setPivotCenter(image) {
     image.pivot.set(image.width / 2, image.height / 2);
 }
@@ -257,35 +261,48 @@ var SimpleGame = (function () {
         this.game.add.tileSprite(0, 0, 1920, 1920, 'background');
         this.game.world.setBounds(0, 0, 1920, 1920);
         console.log(this.game.world.centerX, this.game.world.centerY);
-        this.playerEnergy = new PlayerEnergy(this.game, 1000);
-        this.mouth = this.game.add.sprite(this.game.world.centerX, this.game.world.centerY, "segment");
-        this.mouth.scale.set(0.9);
-        // add eyes
-        var eyeDistance = 50;
-        this.eyes = [];
-        for (var i = 0; i < 3; i++) {
-            // i eye captain
-            var x = Math.sin(2 * Math.PI * (i / 3) + 2 * Math.PI / 6) * eyeDistance;
-            var y = Math.cos(2 * Math.PI * (i / 3) + 2 * Math.PI / 6) * eyeDistance;
-            console.log("eye " + i + ", " + x + ":" + y);
-            var eye = new Eye(this.game, x, y);
-            eye.attach(this.mouth);
-            this.eyes.push(eye);
-        }
+        var spawnOffset = 200;
+        this.mouthGod = this.game.add.sprite(spawnOffset, spawnOffset, "mouth-bite1");
+        this.mouthGod.scale.set(2);
+        var playerBodyScale = 0.65;
+        this.playerBody = this.game.add.sprite(this.mouthGod.x + spawnOffset, this.mouthGod.y + spawnOffset, "segment");
+        this.playerBody.scale.set(playerBodyScale);
+        this.foodEatenCount = 0;
+        //add eyes
+        // const eyeDistance = 1;
+        // this.eyes = [];
+        // for (var i = 0; i < 3; i++) {
+        // 	// i eye captain
+        // 	let x = Math.sin(2 * Math.PI * (i / 3) + 2 * Math.PI / 6) * eyeDistance;
+        // 	let y = Math.cos(2 * Math.PI * (i / 3) + 2 * Math.PI / 6) * eyeDistance;
+        // 	console.log(`eye ${i}, ${x}:${y}`);
+        // 	let eye = new Eye(this.game, x, y);
+        // 	eye.attach(this.mouthGod);
+        // 	this.eyes.push(eye);
+        // }
         // add mouth-lips
-        this.mouthLips = this.game.make.image(0, 0, "mouth-bite1");
-        setPivotCenter(this.mouthLips);
-        this.mouth.addChild(this.mouthLips);
-        window["mouth"] = this.mouthLips; // for in-browser debug
-        window["eyes"] = this.eyes; // for in-browser debug
+        // this.mouthLips = this.game.make.image(0, 0, "mouth-bite1");
+        // setPivotCenter(this.mouthLips);
+        // this.mouthGod.addChild(this.mouthLips);
+        // window["mouth"] = this.mouthLips; // for in-browser debug
+        // window["eyes"] = this.eyes;  // for in-browser debug
         this.game.physics.startSystem(Phaser.Physics.P2JS);
-        this.game.camera.follow(this.mouth);
+        this.game.camera.follow(this.playerBody);
+        cameraScale.onChange(function (scale) {
+            _this.game.camera.scale.setTo(scale);
+        });
         // Enabled physics on mouth
-        this.game.physics.p2.enable([this.mouth], SHOW_PHYSICS_DEBUG);
+        this.game.physics.p2.enable([this.playerBody, this.mouthGod], SHOW_PHYSICS_DEBUG);
         this.game.physics.p2.setImpactEvents(true);
         // setup behaviour of individual bits
-        this.mouth.body.mass = tweaks.mouthMass;
-        mouthMass.onChange(function (value) { return _this.mouth.body.mass = value; });
+        this.playerBody.body.mass = tweaks.playerBodyMass;
+        this.playerBody.body.setCircle(this.playerBody.width * playerBodyScale);
+        this.mouthGod.body.mass = 1000;
+        ;
+        // this.mouthGod.body.setRectangle(this.mouthGod.width * 2, 90 * 2);
+        this.mouthGod.body.immovable = true;
+        this.mouthGod.body.moves = false;
+        // mouthMass.onChange(value => this.playerBody.body.mass = value);
         this.keyList = [];
         var setupCursors = function () {
             _this.keyList[0] = _this.game.input.keyboard.createCursorKeys();
@@ -315,23 +332,21 @@ var SimpleGame = (function () {
             };
         };
         setupCursors();
-        //Enemy
-        this.crab = new Crab(this.game, this.game.world.centerX - 200, this.game.world.centerY - 200, this.mouth);
         // Collision groups
         var foodCollisionGroup = this.game.physics.p2.createCollisionGroup();
         var shellCollisionGroup = this.game.physics.p2.createCollisionGroup();
         var urchinCollisionGroup = this.game.physics.p2.createCollisionGroup();
-        var mouthCollisionGroup = this.game.physics.p2.createCollisionGroup();
+        var playerBodyCollisionGroup = this.game.physics.p2.createCollisionGroup();
         this.armsCollisionGroups = [];
+        this.mouthCoillisionGroup = this.game.physics.p2.createCollisionGroup();
         this.game.physics.p2.updateBoundsCollisionGroup();
         for (var i_1 = 0; i_1 < armsTotal; i_1++) {
             this.armsCollisionGroups.push(this.game.physics.p2.createCollisionGroup());
         }
-        // var foodHitArm = (playerBody, foodBody) => {
-        // 	let sprite = foodBody.sprite;
-        // 	sprite.kill();if (sprite.group){   sprite.group.remove(sprite);}else if (sprite.parent){   sprite.parent.removeChild(sprite);}
-        // 	foodBody.destroy();
-        // };
+        //Enemy
+        this.crab = new Crab(this.game, this.game.world.centerX - 200, this.game.world.centerY - 200, this.playerBody);
+        this.crab.base.body.setCollisionGroup(urchinCollisionGroup);
+        this.crab.base.body.collides(this.armsCollisionGroups.concat([foodCollisionGroup, shellCollisionGroup, urchinCollisionGroup]));
         var foodHitMouth = function (playerBody, foodBody) {
             var sprite = foodBody.sprite;
             sprite.kill();
@@ -342,22 +357,20 @@ var SimpleGame = (function () {
                 sprite.parent.removeChild(sprite);
             }
             foodBody.destroy();
-            _this.playerEnergy.increaeEnergy(100);
+            _this.foodEatenCount++;
         };
         this.urchinReaction = false;
         var urchinHitPlayer = function (playerBody, urchinBody) {
-            // Do reactionary things
-            console.log("Hit urchin");
             _this.urchinReaction = true;
             setTimeout(function () {
                 _this.urchinReaction = false;
             }, RECOIL_DURATION_MS);
         };
         var createNoodlyAppendage = function (armIndex) {
-            var arm = new Arm(_this.game, armIndex);
+            var arm = new Arm(_this.game, armIndex, _this.playerBody.x, _this.playerBody.y);
             _this.game.world.add(arm.sprite);
             var appendageRotation = 2 * Math.PI * (armIndex / armsTotal);
-            arm.attachTo(_this.mouth.body, appendageRotation);
+            arm.attachTo(_this.playerBody.body, appendageRotation);
             return arm;
         };
         this.armList = [];
@@ -384,9 +397,12 @@ var SimpleGame = (function () {
         for (var i = 0; i < 20; i++) {
             this.game.add.image(this.game.world.randomX, this.game.world.randomY, randomDoodad());
         }
-        this.mouth.body.setCollisionGroup(mouthCollisionGroup);
-        this.mouth.body.collides(foodCollisionGroup, foodHitMouth);
-        this.mouth.body.collides(urchinCollisionGroup, urchinHitPlayer);
+        this.playerBody.body.setCollisionGroup(playerBodyCollisionGroup);
+        this.playerBody.body.collides([foodCollisionGroup, shellCollisionGroup]);
+        this.playerBody.body.collides(urchinCollisionGroup, urchinHitPlayer);
+        this.mouthGod.body.setCollisionGroup(this.mouthCoillisionGroup);
+        this.mouthGod.body.collides([shellCollisionGroup, urchinCollisionGroup]);
+        this.mouthGod.body.collides(foodCollisionGroup, foodHitMouth);
         this.allFood = this.game.add.group();
         this.allFood.enableBody = true;
         this.allFood.physicsBodyType = Phaser.Physics.P2JS;
@@ -395,7 +411,7 @@ var SimpleGame = (function () {
             food.scale.setTo(0.2, 0.2);
             food.body.setCircle(food.width / 2 * 0.8, 0, 0, 0);
             food.body.setCollisionGroup(foodCollisionGroup);
-            food.body.collides(this.armsCollisionGroups.concat([foodCollisionGroup, shellCollisionGroup, urchinCollisionGroup]));
+            food.body.collides(this.armsCollisionGroups.concat([foodCollisionGroup, shellCollisionGroup, urchinCollisionGroup, this.mouthCoillisionGroup]));
         }
         this.urchinGroup = this.game.add.group();
         this.urchinGroup.enableBody = true;
@@ -405,7 +421,7 @@ var SimpleGame = (function () {
             urchin.scale.setTo(0.2);
             urchin.body.setCircle(urchin.width / 2 * 0.8, 0, 0, 0);
             urchin.body.setCollisionGroup(urchinCollisionGroup);
-            urchin.body.collides(this.armsCollisionGroups.concat([foodCollisionGroup, shellCollisionGroup, urchinCollisionGroup]));
+            urchin.body.collides(this.armsCollisionGroups.concat([foodCollisionGroup, shellCollisionGroup, urchinCollisionGroup, this.mouthCoillisionGroup]));
         }
         // Don't really need to worry about shells after creation
         var shellGroup = this.game.add.group();
@@ -416,7 +432,7 @@ var SimpleGame = (function () {
             shell.scale.setTo(0.55);
             shell.body.setCircle(shell.width / 2 * 0.8, 0, 0, 0);
             shell.body.setCollisionGroup(shellCollisionGroup);
-            shell.body.collides([foodCollisionGroup, shellCollisionGroup, mouthCollisionGroup, urchinCollisionGroup].concat(this.armsCollisionGroups));
+            shell.body.collides([foodCollisionGroup, shellCollisionGroup, playerBodyCollisionGroup, urchinCollisionGroup, this.mouthCoillisionGroup].concat(this.armsCollisionGroups));
         }
         // TITLESCREEN
         this.title = this.game.add.sprite(this.game.width / 2, this.game.height / 2, "title");
@@ -424,7 +440,7 @@ var SimpleGame = (function () {
         this.title.scale.set(0.8);
         this.title.fixedToCamera = true;
         // Sort out z-index of important items
-        this.mouth.bringToTop();
+        this.playerBody.bringToTop();
         this.title.bringToTop();
         window["game"] = this;
     };
@@ -437,6 +453,9 @@ var SimpleGame = (function () {
             if (this.title.alpha < 0) {
                 this.game.world.removeChild(this.title);
             }
+        }
+        if (this.foodEatenCount >= maxFoodToWin) {
+            console.log("You have won");
         }
         function anglise(tip, direction, force) {
             var rotation = tip.rotation + direction;
@@ -479,11 +498,10 @@ var SimpleGame = (function () {
         for (var a = 0; a < armsTotal; ++a) {
             forceBody(this.armList[a].tip, this.keyList[a], tweaks.tentacleForce);
         }
-        this.mouthLips.rotation = -this.mouthLips.parent.rotation; // always up
-        this.eyes.forEach(function (e) { return e.update(); });
+        // this.mouthLips.rotation = -this.mouthLips.parent.rotation; // always up
+        // this.eyes.forEach(e => e.update());
         this.armList.forEach(function (arm) { return arm.update(); });
         this.crab.update();
-        this.playerEnergy.decreaseEnergy(1);
     };
     return SimpleGame;
 }());
