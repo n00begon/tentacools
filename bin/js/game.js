@@ -445,7 +445,7 @@ var SimpleGame = (function () {
         for (var i = 0; i < foodCount; i++) {
             var x = this.game.world.randomX;
             var y = this.game.world.randomY;
-            while (x < 350 || y < 350) {
+            while (x < 500 || y < 500) {
                 x = this.game.world.randomX;
                 y = this.game.world.randomY;
             }
@@ -505,7 +505,7 @@ var SimpleGame = (function () {
         var _this = this;
         // Hide title screen after a while
         // Feel free to delete this or move it somewhere else somehow
-        if (this.title && this.game.time.now > 3000) {
+        if (this.title && this.game.time.now > 4000) {
             this.title.alpha -= 0.05;
             if (this.title.alpha < 0) {
                 this.game.world.removeChild(this.title);
@@ -515,7 +515,7 @@ var SimpleGame = (function () {
                 this.instructions.bringToTop();
             }
         }
-        if (!this.title && this.instructions && this.game.time.now > 7000) {
+        if (!this.title && this.instructions && this.game.time.now > 8000) {
             this.instructions.alpha -= 0.05;
             if (this.instructions.alpha < 0) {
                 this.game.world.removeChild(this.instructions);
@@ -525,7 +525,7 @@ var SimpleGame = (function () {
                 this.controls.bringToTop();
             }
         }
-        if (!this.instructions && this.controls && this.game.time.now > 12000) {
+        if (!this.instructions && this.controls && this.game.time.now > 13000) {
             this.controls.alpha -= 0.05;
             if (this.controls.alpha < 0) {
                 this.game.world.removeChild(this.controls);
