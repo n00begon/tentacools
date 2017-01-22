@@ -138,7 +138,7 @@ var PlayerEnergy = (function () {
 var Eye = (function () {
     function Eye(game, x, y) {
         this.game = game;
-        this.offset = Math.random() * 10000;
+        this.offset = 0; //Math.random() * 10000;
         this.base = this.game.add.image(x, y, "eyeball-base");
         this.iris = this.game.make.image(this.base.width / 2, this.base.height / 2, "eyeball-iris");
         this.highlight = this.game.make.image(0, 0, "eyeball-highlight");
@@ -146,7 +146,7 @@ var Eye = (function () {
         setPivotCenter(this.iris);
         // setPivotCenter(this.highlight);
         this.highlight.position.set(0);
-        // adding these children causes mayhem...
+        this.base.scale.setTo(1.5);
         this.base.addChild(this.iris);
         this.base.addChild(this.highlight);
     }
@@ -156,8 +156,8 @@ var Eye = (function () {
     };
     Eye.prototype.update = function () {
         var now = this.game.time.now;
-        var xoffset = this.base.width / 2;
-        var yoffset = this.base.height / 2;
+        var xoffset = this.base.width / 3;
+        var yoffset = this.base.height / 3;
         this.iris.position.set(Math.sin(2 * Math.PI * (now + this.offset) / 1000 * 0.2) * 5 + xoffset, Math.cos(2 * Math.PI * (now + this.offset) / 1000 * 0.17) * 5 + yoffset);
         this.base.rotation = -this.base.parent.rotation;
     };
@@ -292,18 +292,18 @@ var SimpleGame = (function () {
         this.playerBody = this.game.add.sprite(this.mouthGod.x + playerSpawnOffset, this.mouthGod.y + playerSpawnOffset, "segment");
         this.playerBody.scale.set(playerBodyScale);
         this.foodEatenCount = 0;
-        //add eyes
-        // const eyeDistance = 1;
-        // this.eyes = [];
-        // for (var i = 0; i < 3; i++) {
-        // 	// i eye captain
-        // 	let x = Math.sin(2 * Math.PI * (i / 3) + 2 * Math.PI / 6) * eyeDistance;
-        // 	let y = Math.cos(2 * Math.PI * (i / 3) + 2 * Math.PI / 6) * eyeDistance;
-        // 	console.log(`eye ${i}, ${x}:${y}`);
-        // 	let eye = new Eye(this.game, x, y);
-        // 	eye.attach(this.mouthGod);
-        // 	this.eyes.push(eye);
-        // }
+        // add eyes
+        var eyeDistance = 45;
+        this.eyes = [];
+        for (var i = 0; i < 3; i++) {
+            // i eye captain
+            var x_1 = Math.sin(2 * Math.PI * (i / 3) + 2 * Math.PI / 6) * eyeDistance;
+            var y_1 = Math.cos(2 * Math.PI * (i / 3) + 2 * Math.PI / 6) * eyeDistance;
+            console.log("eye " + i + ", " + x_1 + ":" + y_1);
+            var eye = new Eye(this.game, x_1, y_1);
+            eye.attach(this.playerBody);
+            this.eyes.push(eye);
+        }
         // add mouth-lips
         // this.mouthLips = this.game.make.image(0, 0, "mouth-bite1");
         // setPivotCenter(this.mouthLips);
@@ -580,7 +580,7 @@ var SimpleGame = (function () {
             forceBody(this.armList[a].tip, this.keyList[a], tweaks.tentacleForce);
         }
         // this.mouthLips.rotation = -this.mouthLips.parent.rotation; // always up
-        // this.eyes.forEach(e => e.update());
+        this.eyes.forEach(function (e) { return e.update(); });
         this.armList.forEach(function (arm) { return arm.update(); });
         if (this.game.time.now > 12000) {
             this.crab.update();
